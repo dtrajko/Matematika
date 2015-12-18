@@ -1,5 +1,6 @@
 package com.dtrajko.matematika;
 
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.support.v7.app.ActionBarActivity;
@@ -18,7 +19,7 @@ import java.util.Random;
 public class Calculator extends ActionBarActivity {
 
     Random r;
-    String[] operacije = new String[2];
+    String[] operacije = new String[3];
     String current_operation_title;
     int operand_1 = 0;
     int operand_2 = 0;
@@ -26,6 +27,8 @@ public class Calculator extends ActionBarActivity {
     int operand_2_max_value_sabiranje = 10;
     int operand_1_max_value_oduzimanje = 20;
     int operand_2_max_value_oduzimanje = 20;
+    int operand_1_max_value_mnozenje = 10;
+    int operand_2_max_value_mnozenje = 10;
     int rezultat = 0;
     int game_score = 0;
     int num_lives = 5;
@@ -79,9 +82,8 @@ public class Calculator extends ActionBarActivity {
     public boolean initGame() {
         operacije[0] = "Sabiranje";
         operacije[1] = "Oduzimanje";
+        operacije[2] = "Množenje";
         r = new Random();
-        int current_operation_index = r.nextInt(2);
-        current_operation_title = operacije[current_operation_index];
         game_score = 0;
         num_lives = 5;
         answer_checked = true;
@@ -124,6 +126,17 @@ public class Calculator extends ActionBarActivity {
     public boolean setQuestion() {
         // TextView operacija_label = (TextView) findViewById(R.id.operacija_label);
         // operacija_label.setText(current_operation_title);
+        int current_operation_index = r.nextInt(3);
+        current_operation_title = operacije[current_operation_index];
+        String app_label = "";
+        try {
+            app_label = getResources().getString(getPackageManager().
+                getActivityInfo(getComponentName(), 0).labelRes);
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+        setTitle(app_label + " | " + current_operation_title);
+
         TextView operator_label_textview = (TextView) findViewById(R.id.operator_label);
         switch (current_operation_title) {
             case "Sabiranje":
@@ -141,6 +154,11 @@ public class Calculator extends ActionBarActivity {
                     operand_1 = operand_2;
                     operand_2 = operand_temp;
                 }
+                break;
+            case "Množenje":
+                operator_label_textview.setText("x");
+                operand_1 = r.nextInt(operand_1_max_value_mnozenje - 1) + 1;
+                operand_2 = r.nextInt(operand_2_max_value_mnozenje - 1) + 1;
                 break;
         }
 
@@ -186,6 +204,9 @@ public class Calculator extends ActionBarActivity {
             case "Oduzimanje":
                 answer_correct = (rezultat == operand_1 - operand_2);
                 break;
+            case "Množenje":
+            answer_correct = (rezultat == operand_1 * operand_2);
+            break;
         }
         if (answer_correct)
         {
