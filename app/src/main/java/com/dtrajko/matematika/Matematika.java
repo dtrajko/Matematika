@@ -16,11 +16,12 @@ import java.io.IOException;
 import java.util.Random;
 
 
-public class Calculator extends ActionBarActivity {
+public class Matematika extends ActionBarActivity {
 
     Random r;
-    String[] operacije = new String[3];
+    String[] operacije = new String[]{"Sabiranje", "Oduzimanje", "Množenje"};
     String current_operation_title;
+    int current_operation_index;
     int operand_1 = 0;
     int operand_2 = 0;
     int operand_1_max_value_sabiranje = 10;
@@ -40,12 +41,21 @@ public class Calculator extends ActionBarActivity {
     boolean game_end = false;
     MediaPlayer sound_succ;
     MediaPlayer sound_fail;
+    String app_label = "";
+
+    static final String GAME_SCORE = "game_score";
+    static final String NUM_LIVES = "num_lives";
+    static final String CURR_OP_INDEX = "current_operation_index";
+    static final String OPERAND_1 = "operand_1";
+    static final String OPERAND_2 = "operand_2";
+    static final String ANSWER_CHECKED = "answer_checked";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_kalkulator);
 
+        // Probably initialize members with default values for a new instance
         dugme = (Button) findViewById(R.id.dugme);
         dugme.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -53,7 +63,45 @@ public class Calculator extends ActionBarActivity {
                 nextGameStep();
             }
         });
+
+        if (savedInstanceState != null) {
+            game_score = savedInstanceState.getInt(GAME_SCORE);
+            num_lives = savedInstanceState.getInt(NUM_LIVES);
+            current_operation_index = savedInstanceState.getInt(CURR_OP_INDEX);
+            operand_1 = savedInstanceState.getInt(OPERAND_1);
+            operand_2 = savedInstanceState.getInt(OPERAND_2);
+            answer_checked = true;
+        } else {
+            initGame();
+            nextGameStep();
+        }
+    }
+
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        // Save the user's current game state
+        savedInstanceState.putInt(GAME_SCORE, game_score);
+        savedInstanceState.putInt(NUM_LIVES, num_lives);
+        savedInstanceState.putInt(CURR_OP_INDEX, current_operation_index);
+        savedInstanceState.putInt(OPERAND_1, operand_1);
+        savedInstanceState.putInt(OPERAND_2, operand_2);
+        savedInstanceState.putBoolean(ANSWER_CHECKED, answer_checked);
+
+        // Always call the superclass so it can save the view hierarchy state
+        super.onSaveInstanceState(savedInstanceState);
+    }
+
+    public void onRestoreInstanceState(Bundle savedInstanceState) {
+        // Always call the superclass so it can restore the view hierarchy
+        super.onRestoreInstanceState(savedInstanceState);
+
+        // Restore state members from saved instance
         initGame();
+        game_score = savedInstanceState.getInt(GAME_SCORE);
+        num_lives = savedInstanceState.getInt(NUM_LIVES);
+        current_operation_index = savedInstanceState.getInt(CURR_OP_INDEX);
+        operand_1 = savedInstanceState.getInt(OPERAND_1);
+        operand_2 = savedInstanceState.getInt(OPERAND_2);
+        answer_checked = true;
         nextGameStep();
     }
 
@@ -80,10 +128,10 @@ public class Calculator extends ActionBarActivity {
     }
 
     public boolean initGame() {
-        operacije[0] = "Sabiranje";
-        operacije[1] = "Oduzimanje";
-        operacije[2] = "Množenje";
         r = new Random();
+        // operacije[0] = "Sabiranje";
+        // operacije[1] = "Oduzimanje";
+        // operacije[2] = "Množenje";
         game_score = 0;
         num_lives = 5;
         answer_checked = true;
@@ -92,7 +140,19 @@ public class Calculator extends ActionBarActivity {
         lives_textview = (TextView) findViewById(R.id.lives);
         dugme = (Button) findViewById(R.id.dugme);
         dugme.setTextColor(Color.WHITE);
+        app_label = getAppLabel();
         return true;
+    }
+
+    public String getAppLabel() {
+        String app_label = "";
+        try {
+            app_label = getResources().getString(getPackageManager().
+                    getActivityInfo(getComponentName(), 0).labelRes);
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+        return app_label;
     }
 
     public boolean nextGameStep() {
@@ -126,15 +186,9 @@ public class Calculator extends ActionBarActivity {
     public boolean setQuestion() {
         // TextView operacija_label = (TextView) findViewById(R.id.operacija_label);
         // operacija_label.setText(current_operation_title);
-        int current_operation_index = r.nextInt(3);
+        current_operation_index = r.nextInt(3);
         current_operation_title = operacije[current_operation_index];
-        String app_label = "";
-        try {
-            app_label = getResources().getString(getPackageManager().
-                getActivityInfo(getComponentName(), 0).labelRes);
-        } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
-        }
+        app_label = getAppLabel();
         setTitle(app_label + " | " + current_operation_title);
 
         TextView operator_label_textview = (TextView) findViewById(R.id.operator_label);
@@ -180,7 +234,26 @@ public class Calculator extends ActionBarActivity {
         return true;
     }
 
+    /**
+    public boolean restoreQuestion() {
+        current_operation_title = operacije[current_operation_index];
+        setTitle(app_label + " | " + current_operation_title);
+        TextView operand_1_textview = (TextView) findViewById(R.id.operand_1);
+        operand_1_textview.setText(String.valueOf(operand_1));
+        TextView operand_2_textview = (TextView) findViewById(R.id.operand_2);
+        operand_2_textview.setText(String.valueOf(operand_2));
+        dugme.setBackgroundColor(Color.DKGRAY);
+        dugme.setText("Провери");
+        answer_checked = false;
+        return true;
+    }
+    */
+
     public boolean updateTopBar() {
+        if (!(game_score_textview instanceof TextView) || !(lives_textview instanceof TextView)) {
+            game_score_textview = (TextView) findViewById(R.id.game_score);
+            lives_textview = (TextView) findViewById(R.id.lives);
+        }
         game_score_textview.setText(String.valueOf(game_score));
         lives_textview.setText("");
         lives_textview.setTextColor(Color.RED);
@@ -197,6 +270,7 @@ public class Calculator extends ActionBarActivity {
         sound_succ = MediaPlayer.create(this, R.raw.tada);
         sound_fail = MediaPlayer.create(this, R.raw.fail);
         boolean answer_correct = false;
+        current_operation_title = operacije[current_operation_index];
         switch (current_operation_title) {
             case "Sabiranje":
                 answer_correct = (rezultat == operand_1 + operand_2);
